@@ -13,7 +13,7 @@ I'm using a OSX machine so the easyest way to build the kernel module is run a D
 Let's run the Ubuntu container:
 
 ```shell
-# docker  run -it ubuntu
+# docker run -it ubuntu
 ```
 
 Then install some required software in the Ubuntu container:
