@@ -215,9 +215,10 @@ We can check the new configuration reloading the new configuration:
 
 ```
 udevadm control --reload
+udevadm trigger
 ```
 
-And unpluging and pluging again the USB dongle. We should see that the symbolic link is correctly created:
+(or unplug and plug again the USB dongle). We should see that the symbolic link is correctly created:
 
 ```
 # ls -l /dev/zigbeedongle 
@@ -225,7 +226,7 @@ lrwxrwxrwx 1 root root 7 Mar 25 20:05 /dev/zigbeedongle -> ttyUSB0
 #
 ```
 
-Now we have the the dongle available for docker under **/dev/zigbeedongle** ready to be used 
+Now we have the the dongle available under **/dev/zigbeedongle** ready to be used 
 
 ## 📌 Persistent device name and Docker 🐳
 
