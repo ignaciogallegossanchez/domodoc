@@ -18,7 +18,7 @@ Let's run the Ubuntu container:
 
 Then install some required software in the Ubuntu container:
 
-```shell
+```
 root@38a7827808c0:/# apt-get update && apt-get -y install xz-utils build-essential libncurses-dev
 ```
 
@@ -31,13 +31,13 @@ We will need to download two files from [Synology Open Source Project](https://s
 
 First of all we will need to retrieve information about our Synology device, so SSH it:
 
-```shell
+```
 # ssh -l admin my-synology-ip
 ```
 
 And execute these two commands:
 
-```shell
+```
 ash-4.3# uname -a
 Linux synology 3.10.105 #25426 SMP Mon Dec 14 18:45:24 CST 2020 x86_64 GNU/Linux synology_braswell_216+II
 
@@ -72,7 +72,7 @@ With this information now we can download the software:
 
 Now copy the software to the docker container:
 
-```shell
+```
 # docker cp braswell-gcc493_glibc220_linaro_x86_64-GPL.txz 38a7827808c0:/root
 # docker cp linux-3.10.x.txz 38a7827808c0:/root
 ```
@@ -84,7 +84,7 @@ Now copy the software to the docker container:
 
 Compiling time! First uncompress the software:
 
-```shell
+```
 # cd /root
 # tar -xf braswell-gcc493_glibc220_linaro_x86_64-GPL.txz 
 # tar -xf linux-3.10.x.txz
@@ -92,14 +92,14 @@ Compiling time! First uncompress the software:
 
 Now copy the default kernel configuration for our architecture (braswell in my case) to the kernel configuration:
 
-```shell
+```
 root@38a7827808c0:~# cd linux-3.10.x/
 root@38a7827808c0:~/linux-3.10.x# cp synoconfigs/braswell .config
 ```
 
 Import the configuration and start menuconfig:
 
-```shell
+```
 root@38a7827808c0:~/linux-3.10.x# ARCH=x86_64 CROSS_COMPILE=/root/x86_64-pc-linux-gnu/bin/x86_64-pc-linux-gnu- make oldconfig
 root@38a7827808c0:~/linux-3.10.x# ARCH=x86_64 CROSS_COMPILE=/root/x86_64-pc-linux-gnu/bin/x86_64-pc-linux-gnu- make menuconfig
 ```
@@ -108,7 +108,7 @@ root@38a7827808c0:~/linux-3.10.x# ARCH=x86_64 CROSS_COMPILE=/root/x86_64-pc-linu
 
 And mark "**USB CP210x**" to be compiled as module (M):
 
-```shell
+```
 Device Drivers  --->
     [*] USB support  --->
         <M>   USB Serial Converter support  --->
@@ -119,7 +119,7 @@ And save to ".config".
 
 And finally **compile** the modules:
 
-```shell
+```
 root@38a7827808c0:~/linux-3.10.x# ARCH=x86_64 CROSS_COMPILE=/root/x86_64-pc-linux-gnu/bin/x86_64-pc-linux-gnu- make -j10 modules
 ```
 
@@ -132,7 +132,7 @@ Copy the module to your Synology NAS.
 
 Load the module executing in your synology (ssh):
 
-```shell
+```
 # modprobe usbserial
 # insmod cp210x.ko
 ```
@@ -140,7 +140,7 @@ Load the module executing in your synology (ssh):
 If no errors, you should see something like this in your dmesg
 
 
-```shell
+```
 # dmesg | tail -n 4
 [ 7154.244106] usbserial: USB Serial support registered for cp210x
 [ 7154.250765] cp210x 1-4:1.0: cp210x converter detected
@@ -155,13 +155,13 @@ We should be able to make this in a easy way, but Synology lacks of a lot of nor
 
 First move the kernel module file where the Synology kernel modules are:
 
-```shell
+```
 mv cp210x.ko /lib/modules/
 ```
 
 And create the file **/usr/local/etc/rc.d/cp210xkmod.sh** with this content:
 
-```shell
+```
 #!/bin/sh
 
 . /etc/rc.subr
@@ -182,7 +182,7 @@ esac
 
 Finally put the correct permissions in the new created file with the command:
 
-```shell
+```
 chmod 755 /usr/local/etc/rc.d/cp210xkmod.sh 
 ```
 
@@ -196,7 +196,7 @@ So it's a good idea to make udev to create a symbolic link to our ttyUSBx device
 
 To make this first get all neded information about our USB stick:
 
-```shell
+```
 # udevadm info -a -p  $(udevadm info -q path -n /dev/ttyUSB0) | grep -m1 {idVendor}
     ATTRS{idVendor}=="10c4"
 # udevadm info -a -p  $(udevadm info -q path -n /dev/ttyUSB0) | grep -m1 {idProduct}
@@ -207,19 +207,19 @@ To make this first get all neded information about our USB stick:
 
 Now we will create a new udev rule to make the link with the name we choose, in this case "zigbeedongle". To make this first edit the file **/usr/lib/udev/rules.d/99-slaesh.rules** with the content:
 
-```shell
+```
 SUBSYSTEM=="tty", ATTRS{idVendor}=="10c4", ATTRS{idProduct}=="ea60", ATTRS{serial}=="00_12_4B_00_21_CC_4D_BA", SYMLINK+="zigbeedongle"
 ```
 
 We can check the new configuration reloading the new configuration:
 
-```shell
+```
 udevadm control --reload
 ```
 
 And unpluging and pluging again the USB dongle. We should see that the symbolic link is correctly created:
 
-```shell
+```
 # ls -l /dev/zigbeedongle 
 lrwxrwxrwx 1 root root 7 Mar 25 20:05 /dev/zigbeedongle -> ttyUSB0
 #
@@ -233,7 +233,7 @@ Now we have the the dongle available for docker under **/dev/zigbeedongle** read
 
 For example I'm getting this error from zigbee2mqtt docker:
 
-```shell
+```
 Zigbee2MQTT:error 2021-03-25 22:10:45: Error: Error while opening serialport 'Error: Error: No such file or directory, cannot open /dev/zigbeedongle
 ```
 
@@ -249,7 +249,7 @@ I've configured udev to change the name of the device with **NAME** directive, b
 
 I'm getting this very explicative error.
 
-```shell
+```
 # udevadm test /devices/pci0000:00/0000:00:14.0/usb1/1-4/1-4:1.0/ttyUSB0/tty/ttyUSB0
 ...
 NAME="zigbeedongle" ignored, kernel device nodes can not be renamed; please fix it in /usr/lib/udev/rules.d/99-slaesh.rules:1
